@@ -4,53 +4,34 @@ declare(strict_types=1);
 
 namespace Pollen\Filesystem;
 
-use League\Flysystem\AdapterInterface;
-use League\Flysystem\FileNotFoundException;
-use League\Flysystem\Filesystem as BaseFilesystem;
-use League\Flysystem\FilesystemInterface as BaseFilesystemInterface;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use League\Flysystem\DirectoryListing;
+use League\Flysystem\FilesystemOperator;
 
-/**
- * @mixin LeagueFilesystem
- */
-interface FilesystemInterface extends BaseFilesystemInterface
+interface FilesystemInterface extends FilesystemOperator
 {
     /**
-     * Génération de la réponse de téléchargement d'un fichier.
+     * Affecte le système de fichier en tant que système par défaut dans le gestionnaire.
      *
-     * @param string $path Chemin relatif vers un fichier du disque.
-     * @param string|null $name Nom de qualification du fichier.
-     * @param array|null $headers Liste des entêtes de la réponse.
-     *
-     * @return StreamedResponse
-     *
-     * @throws FileNotFoundException
+     * @return static
      */
-    public function download(string $path, ?string $name = null, array $headers = []): StreamedResponse;
+    public function asDefault(): FilesystemInterface;
 
     /**
-     * Récupération de l'adaptateur "réel", lorsque celui-ci est englobé dans un système de cache.
+     * Liste les fichiers d'un dossier en incluant les informations de type mime de chacun des fichier
      *
-     * @return AdapterInterface
+     * @param string $location
+     * @param bool $deep
+     *
+     * @return DirectoryListing
      */
-    public function getRealAdapter(): AdapterInterface;
+    public function listContentsWithMimeType(string $location, bool $deep = self::LIST_SHALLOW): DirectoryListing;
 
     /**
-     * Génération de la réponse d'un fichier.
+     * Définition du gestionnaire de systèmes de fichier associé.
      *
-     * @param string $path Chemin relatif vers un fichier du disque.
-     * @param string|null $name Nom de qualification du fichier.
-     * @param array|null $headers Liste des entêtes de la réponse.
-     * @param string|null $disposition inline (affichage)|attachment (téléchargement).
+     * @param StorageManagerInterface $storageManager
      *
-     * @return StreamedResponse
-     *
-     * @throws FileNotFoundException
+     * @return static
      */
-    public function response(
-        string $path,
-        ?string $name = null,
-        array $headers = [],
-        $disposition = 'inline'
-    ): StreamedResponse;
+    public function setStoreManager(StorageManagerInterface $storageManager): FilesystemInterface;
 }

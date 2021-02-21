@@ -4,160 +4,86 @@ declare(strict_types=1);
 
 namespace Pollen\Filesystem;
 
-use InvalidArgumentException;
-use League\Flysystem\AdapterInterface;
-use League\Flysystem\FilesystemInterface;
-use League\Flysystem\FilesystemNotFoundException;
-use tiFy\Contracts\Container\Container;
-
 /**
  * @mixin \Pollen\Support\Concerns\ConfigBagTrait
  * @mixin \Pollen\Support\Concerns\ContainerAwareTrait
- * @mixin \League\Flysystem\MountManager
  */
-interface StorageManagerInterface extends FilesystemInterface
+interface StorageManagerInterface
 {
     /**
-     * Récupération de l'instance d'un point de montage.
+     * Ajout d'une instance de système de gestion de fichier.
      *
-     * @param string|null $name Nom de qualification du point de montage|Point de montage par défaut.
+     * @param string|null $name
+     * @param FilesystemInterface $disk
      *
-     * @return Filesystem|null
+     * @return StorageManagerInterface
      */
-    public function disk(?string $name = null): ?Filesystem;
+    public function addDisk(string $name, FilesystemInterface $disk): StorageManagerInterface;
 
     /**
-     * Récupération de l'instance du controleur d'injection de dépendances.
+     * Ajout d'une instance de système de gestion de fichier local.
      *
-     * @return Container|null
+     * @param string|null $name
+     * @param LocalFilesystemInterface $disk
+     *
+     * @return StorageManagerInterface
      */
-    public function getContainer(): ?Container;
+    public function addLocalDisk(string $name, LocalFilesystemInterface $disk): StorageManagerInterface;
 
     /**
-     * Récupération de l'instance du point de montage par défaut.
+     * Création d'une instance d'adapter de système de fichiers local.
      *
-     * @return Filesystem|null
+     * @param string $root
+     * @param array $config
+     *
+     * @return LocalFilesystemAdapterInterface
      */
-    public function getDefault(): ?Filesystem;
+    public function createLocalAdapter(string $root, array $config = []): LocalFilesystemAdapterInterface;
 
     /**
-     * Récupération d'une instance gestionnaire de fichier.
+     * Récupération d'une instance de système de gestion de fichier.
      *
-     * @param string $name Nom de qualification du point de montage.
+     * @param string|null $name
      *
-     * @return Filesystem
-     *
-     * @throws FilesystemNotFoundException
+     * @return FilesystemInterface|null
      */
-    public function getFilesystem($name);
+    public function disk(?string $name = null): ?FilesystemInterface;
 
     /**
-     * Création d'une instance de système de fichiers locaux de type image.
+     * Récupération de l'instance de système de gestion de fichier déclaré par défaut.
      *
-     * @param string $root Chemin absolu vers le répertoire du stockage de fichiers.
-     * @param array $config Liste des paramètres de configuration.
-     *
-     * @return ImgFilesystem
+     * @return FilesystemInterface|null
      */
-    public function img(string $root, array $config = []): ImgFilesystem;
+    public function getDefaultDisk(): ?FilesystemInterface;
 
     /**
-     * Création d'une instance de système de fichier locaux de type image.
+     * Déclaration d'un système de fichiers local.
      *
-     * @param string $root Chemin absolu vers le répertoire du stockage de fichiers.
-     * @param array $config Liste des paramètres de configuration.
+     * @param string $name
+     * @param string $root
+     * @param array $config
      *
-     * @return ImgAdapter
+     * @return LocalFilesystemInterface
      */
-    public function imgAdapter(string $root, array $config = []): AdapterInterface;
+    public function registerLocalDisk(string $name, string $root, array $config = []): LocalFilesystemInterface;
 
     /**
-     * Création d'une instance de système de fichiers locaux.
+     * Déclaration d'un système de fichiers images local.
      *
-     * @param string $root Chemin absolu vers le répertoire du stockage de fichiers.
-     * @param array $config Liste des paramètres de configuration.
+     * @param string $name
+     * @param string $root
+     * @param array $config
      *
-     * @return LocalFilesystem
+     * @return LocalImageFilesystemInterface
      */
-    public function local(string $root, array $config = []): LocalFilesystem;
+    public function registerLocalImageDisk(string $name, string $root, array $config = []): LocalImageFilesystemInterface;
 
     /**
-     * Création d'une instance de système de fichier locaux.
+     * Définition de l'instance de système de gestion de fichier déclaré par défaut.
      *
-     * @param string $root Chemin absolu vers le répertoire du stockage de fichiers.
-     * @param array $config Liste des paramètres de configuration.
+     * @param FilesystemInterface $defaultDisk
      *
-     * @return LocalAdapter
+     * @return StorageManagerInterface
      */
-    public function localAdapter(string $root, array $config = []): AdapterInterface;
-
-    /**
-     * Montage d'une instance de gestionnaire de fichiers.
-     *
-     * @param string $name Nom de qualification du disque.
-     * @param FilesystemInterface $filesystem Instance du gestionnaire de fichiers.
-     *
-     * @return $this
-     *
-     * @throws InvalidArgumentException
-     */
-    public function mountFilesystem($name, FilesystemInterface $filesystem);
-
-    /**
-     * Déclaration d'un disque.
-     *
-     * @param string $name Nom de qualification.
-     * @param array|Filesystem $attrs Liste des attributs de configuration|Instance du gestionnaire de fichiers.
-     *
-     * @return Filesystem|null
-     */
-    public function register(string $name, $attrs): ?Filesystem;
-
-    /**
-     * Déclaration d'un disque image.
-     *
-     * @param string $name Nom de qualification.
-     * @param array|ImgFilesystem $attrs Liste des attributs de configuration|Instance du gestionnaire de fichiers.
-     *
-     * @return ImgFilesystem|null
-     */
-    public function registerImg(string $name, $attrs): ?Filesystem;
-
-    /**
-     * Déclaration d'un disque local.
-     *
-     * @param string $name Nom de qualification.
-     * @param array|LocalFilesystem $attrs Liste des attributs de configuration|Instance du gestionnaire de fichiers.
-     *
-     * @return LocalFilesystem|null
-     */
-    public function registerLocal(string $name, $attrs): ?Filesystem;
-
-    /**
-     * Définition d'un disque.
-     *
-     * @param string $name Nom de qualification.
-     * @param Filesystem $filesystem Instance du gestionnaire de fichiers.
-     *
-     * @return $this
-     */
-    public function set(string $name, Filesystem $filesystem): StorageManager;
-
-    /**
-     * Définition du conteneur d'injection de dépendances.
-     *
-     * @param Container $container
-     *
-     * @return static
-     */
-    public function setContainer(Container $container): StorageManager;
-
-    /**
-     * Récupération de l'instance d'un point de montage du système de fichier locaux.
-     *
-     * @param string|null $name Nom de qualification du point de montage système|Point de montage système par défaut.
-     *
-     * @return LocalFilesystem|null
-     */
-    public function system(?string $name = null): ?LocalFilesystem;
+    public function setDefaultDisk(FilesystemInterface $defaultDisk): StorageManagerInterface;
 }

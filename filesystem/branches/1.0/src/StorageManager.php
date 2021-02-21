@@ -4,228 +4,50 @@ declare(strict_types=1);
 
 namespace Pollen\Filesystem;
 
-use InvalidArgumentException;
-use League\Flysystem\AdapterInterface;
-use League\Flysystem\Cached\CachedAdapter;
-use League\Flysystem\Cached\CacheInterface;
-use League\Flysystem\Cached\Storage\Memory as MemoryStore;
-use League\Flysystem\FilesystemInterface;
-use League\Flysystem\FilesystemNotFoundException;
-use League\Flysystem\MountManager;
+use League\Flysystem\Local\LocalFilesystemAdapter as BaseLocalFilesystemAdapter;
+use League\Flysystem\UnixVisibility\PortableVisibilityConverter;
+use League\Flysystem\UnixVisibility\VisibilityConverter;
 use Pollen\Support\Concerns\ConfigBagTrait;
 use Pollen\Support\Concerns\ContainerAwareTrait;
 use Psr\Container\ContainerInterface as Container;
-use tiFy\Contracts\Kernel\Path;
+use RuntimeException;
 
-class StorageManager extends MountManager implements StorageManagerInterface
+class StorageManager implements StorageManagerInterface
 {
     use ConfigBagTrait;
     use ContainerAwareTrait;
 
     /**
-     * CONSTRUCTEUR.
-     *
-     * @param FilesystemInterface[] $filesystems [:prefix => Filesystem,]
-     * @param Container|null $container Instance du conteneur d'injection de dépendances.
+     * @var FilesystemInterface[]|array
+     */
+    private $disks = [];
+
+    /**
+     * @var FilesystemInterface|null
+     */
+    private $defaultDisk;
+
+    /**
+     * @param array $config
+     * @param Container|null $container
      *
      * @return void
      */
-    public function __construct(array $filesystems = [], ?Container $container = null)
+    public function __construct(array $config = [], ?Container $container = null)
     {
+        $this->setConfig($config);
+
         if (!is_null($container)) {
             $this->setContainer($container);
         }
-
-        parent::__construct($filesystems);
     }
 
     /**
      * @inheritDoc
      */
-    public function disk(?string $name = null): ?FilesystemContract
+    public function addDisk(string $name, FilesystemInterface $disk): StorageManagerInterface
     {
-        try {
-            return is_null($name) ? $this->getDefault() : $this->getFilesystem($name);
-        } catch (FilesystemNotFoundException $e) {
-            return null;
-        }
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getContainer(): ?Container
-    {
-        return $this->container;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getDefault(): ?FilesystemContract
-    {
-        return $this->system();
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getFilesystem($prefix)
-    {
-        return parent::getFilesystem($prefix);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function img(string $root, array $config = []): ImgFilesystemContract
-    {
-        return $this->getContainer() && $this->getContainer()->has(ImgFilesystemContract::class)
-            ? $this->getContainer()->get(ImgFilesystemContract::class, [$root, $config])
-            : new ImgFilesystem($this->localAdapter($root, $config));
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function imgAdapter(string $root, array $config = []): AdapterInterface
-    {
-        $permissions = $config['permissions'] ?? [];
-        $links = ($config['links'] ?? null) === 'skip' ? ImgAdapter::SKIP_LINKS : ImgAdapter::DISALLOW_LINKS;
-
-        $adapter = ($this->getContainer() && $this->getContainer()->has(ImgAdapterContract::class))
-            ? $this->getContainer()->get(ImgAdapterContract::class, [$root, LOCK_EX, $links, $permissions])
-            : new ImgAdapter($root, LOCK_EX, $links, $permissions);
-
-        if ($cache = $config['cache'] ?? true) {
-            $adapter = $cache instanceof CacheInterface
-                ? new CachedAdapter($adapter, $cache)
-                : new CachedAdapter($adapter, new MemoryStore());
-        }
-
-        return $adapter;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function local(string $root, array $config = []): LocalFilesystemContract
-    {
-        return $this->getContainer() && $this->getContainer()->has(LocalFilesystemContract::class)
-            ? $this->getContainer()->get(LocalFilesystemContract::class, [$root, $config])
-            : new LocalFilesystem($this->localAdapter($root, $config));
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function localAdapter(string $root, array $config = []): AdapterInterface
-    {
-        $permissions = $config['permissions'] ?? [];
-        $links = ($config['links'] ?? null) === 'skip' ? LocalAdapter::SKIP_LINKS : LocalAdapter::DISALLOW_LINKS;
-
-        $adapter = ($this->getContainer() && $this->getContainer()->has(LocalAdapterContract::class))
-            ? $this->getContainer()->get(LocalAdapterContract::class, [$root, LOCK_EX, $links, $permissions])
-            : new LocalAdapter($root, LOCK_EX, $links, $permissions);
-
-        if ($cache = $config['cache'] ?? true) {
-            $adapter = $cache instanceof CacheInterface
-                ? new CachedAdapter($adapter, $cache)
-                : new CachedAdapter($adapter, new MemoryStore());
-        }
-
-        return $adapter;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function mountFilesystem($name, FilesystemInterface $filesystem)
-    {
-        if ($filesystem instanceof FilesystemContract) {
-            return parent::mountFilesystem($name, $filesystem);
-        }
-
-        throw new InvalidArgumentException(sprintf(
-            __(
-                'Impossible de monter le disque [%s]. Le gestionnaire de fichiers doit une instance de [%s].',
-                'tify'
-            ), $name, FilesystemContract::class)
-        );
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function register(string $name, $attrs): ?FilesystemContract
-    {
-        if ($attrs instanceof Filesystem) {
-            $filesystem = $attrs;
-        } elseif (is_array($attrs) || is_string($attrs)) {
-            $filesystem = $this->registerLocal($name, $attrs);
-        } else {
-            throw new InvalidArgumentException(sprintf(
-                __('Les arguments fournis ne permettent pas de définir le système de fichiers [%s].', 'tify'), $name
-            ));
-        }
-
-        return $this->set($name, $filesystem)->disk($name);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function registerImg(string $name, $attrs): ?FilesystemContract
-    {
-        if ($attrs instanceof ImgFilesystemContract) {
-            $filesystem = $attrs;
-        } elseif (is_array($attrs)) {
-            $filesystem = $this->img($attrs['root'] ?? '', $attrs);
-        } elseif (is_string($attrs)) {
-            $filesystem = $this->img($attrs);
-        } else {
-            throw new InvalidArgumentException(sprintf(
-                __('Impossible de déclarer le système de fichiers image [%s].', 'tify'), $name
-            ));
-        }
-
-        return $this->register($name, $filesystem);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function registerLocal(string $name, $attrs): ?FilesystemContract
-    {
-        if ($attrs instanceof LocalFilesystemContract) {
-            $filesystem = $attrs;
-        } elseif (is_array($attrs)) {
-            $filesystem = $this->local($attrs['root'] ?? '', $attrs);
-        } elseif (is_string($attrs)) {
-            $filesystem = $this->local($attrs);
-        } else {
-            throw new InvalidArgumentException(sprintf(
-                __('Impossible de déclarer le système de fichiers local [%s].', 'tify'), $name
-            ));
-        }
-
-        return $this->register($name, $filesystem);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function set(string $name, FilesystemContract $filesystem): StorageManagerContract
-    {
-        return $this->mountFilesystem($name, $filesystem);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function setContainer(Container $container): StorageManagerContract
-    {
-        $this->container = $container;
+        $this->disks[$name] = $disk->setStoreManager($this);
 
         return $this;
     }
@@ -233,9 +55,90 @@ class StorageManager extends MountManager implements StorageManagerInterface
     /**
      * @inheritDoc
      */
-    public function system(?string $name = null): ?LocalFilesystemContract
+    public function addLocalDisk(string $name, LocalFilesystemInterface $disk): StorageManagerInterface
     {
-        /** @var Path $path */
-        return ($path = $this->container->get('path')) instanceof Path ? $path->disk($name) : null;
+        return $this->addDisk($name, $disk);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function createLocalAdapter(string $root, array $config = []): LocalFilesystemAdapterInterface
+    {
+        $visibility = $config['visibility'] ?? null;
+        if (!$visibility instanceof VisibilityConverter) {
+            $visibility = is_array($visibility)? PortableVisibilityConverter::fromArray($visibility) : null;
+        }
+
+        $writeFlags = (int)($config['write_flags'] ?? LOCK_EX);
+
+        $linkHandling = ($config['links'] ?? null) === 'skip'
+            ? BaseLocalFilesystemAdapter::SKIP_LINKS : BaseLocalFilesystemAdapter::DISALLOW_LINKS;
+
+        return new LocalFilesystemAdapter($root, $visibility, $writeFlags, $linkHandling);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function disk(?string $name = null): ?FilesystemInterface
+    {
+        if ($name === null) {
+            return $this->getDefaultDisk();
+        }
+
+        return $this->disks[$name] ?? null;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getDefaultDisk(): ?FilesystemInterface
+    {
+        return $this->defaultDisk;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function registerLocalDisk(string $name, string $root, array $config = []): LocalFilesystemInterface
+    {
+        $adapter = $this->createLocalAdapter($root, $config);
+        $disk = new LocalFilesystem($adapter);
+
+        $this->addLocalDisk($name, $disk);
+
+        $exists = $this->disk($name);
+        if ($exists instanceof LocalFilesystemInterface) {
+            return $exists;
+        }
+        throw new RuntimeException(sprintf('StorageManager unable to register local disk [%s]', $name));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function registerLocalImageDisk(string $name, string $root, array $config = []): LocalImageFilesystemInterface
+    {
+        $adapter = $this->createLocalAdapter($root, $config);
+        $disk = new LocalImageFilesystem($adapter);
+
+        $this->addLocalDisk($name, $disk);
+
+        $exists = $this->disk($name);
+        if ($exists instanceof LocalImageFilesystemInterface) {
+            return $exists;
+        }
+        throw new RuntimeException(sprintf('StorageManager unable to register local image disk [%s]', $name));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function setDefaultDisk(FilesystemInterface $defaultDisk): StorageManagerInterface
+    {
+        $this->defaultDisk = $defaultDisk;
+
+        return $this;
     }
 }
