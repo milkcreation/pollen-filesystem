@@ -7,14 +7,14 @@ namespace Pollen\Filesystem;
 use League\Flysystem\Local\LocalFilesystemAdapter as BaseLocalFilesystemAdapter;
 use League\Flysystem\UnixVisibility\PortableVisibilityConverter;
 use League\Flysystem\UnixVisibility\VisibilityConverter;
-use Pollen\Support\Concerns\ConfigBagTrait;
+use Pollen\Support\Concerns\ConfigBagAwareTrait;
 use Pollen\Support\Concerns\ContainerAwareTrait;
 use Psr\Container\ContainerInterface as Container;
 use RuntimeException;
 
 class StorageManager implements StorageManagerInterface
 {
-    use ConfigBagTrait;
+    use ConfigBagAwareTrait;
     use ContainerAwareTrait;
 
     /**
