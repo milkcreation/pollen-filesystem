@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Pollen\Filesystem;
 
-/**
- * @mixin \Pollen\Support\Concerns\ConfigBagAwareTrait
- * @mixin \Pollen\Support\Concerns\ContainerAwareTrait
- */
-interface StorageManagerInterface
+use Pollen\Support\Concerns\ConfigBagAwareTraitInterface;
+use Pollen\Support\Proxy\ContainerProxyInterface;
+
+interface StorageManagerInterface extends ContainerProxyInterface, ConfigBagAwareTraitInterface
 {
     /**
      * Ajout d'une instance de système de gestion de fichier.
