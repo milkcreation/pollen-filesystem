@@ -7,29 +7,24 @@ namespace Pollen\Filesystem;
 use League\Flysystem\FilesystemException;
 use Pollen\Http\BinaryFileResponse;
 use Pollen\Http\BinaryFileResponseInterface;
-use Pollen\Http\Request;
 use Pollen\Http\UrlHelper;
-use Pollen\Http\RequestInterface;
 use Pollen\Http\StreamedResponse;
 use Pollen\Http\StreamedResponseInterface;
 use Pollen\Support\DateTime;
+use Pollen\Support\Proxy\HttpRequestProxy;
 use Pollen\Support\Str;
 use RuntimeException;
 use Throwable;
 
 trait FilesystemHttpAwareTrait
 {
+    use HttpRequestProxy;
+
     /**
      * Url vers le répertoire racine du système de fichier.
      * @var string
      */
     protected $baseUrl;
-
-    /**
-     * Instance de la requête HTTP associée.
-     * @var RequestInterface|null
-     */
-    protected $request;
 
     /**
      * @inheritDoc
@@ -93,7 +88,7 @@ trait FilesystemHttpAwareTrait
             return null;
         }
 
-        $request = $this->getRequest();
+        $request = $this->httpRequest();
         $documentRoot = $request->getDocumentRoot();
 
         if (!preg_match('/^' . preg_quote($documentRoot, '/') . '(.*)/', $absolutePath, $matches)) {
@@ -109,14 +104,6 @@ trait FilesystemHttpAwareTrait
     public function downloadResponse(string $path, ?string $name = null, array $headers = []): StreamedResponseInterface
     {
         return $this->response($path, $name, $headers, 'attachment');
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getRequest(): RequestInterface
-    {
-        return $this->request = $this->request ?: Request::createFromGlobals();
     }
 
     /**
@@ -185,16 +172,6 @@ trait FilesystemHttpAwareTrait
     public function setBaseUrl(string $baseUrl): FilesystemHttpAwareTrait
     {
         $this->baseUrl = $baseUrl;
-
-        return $this;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function setRequest(RequestInterface $request): FilesystemHttpAwareTrait
-    {
-        $this->request = $request;
 
         return $this;
     }
