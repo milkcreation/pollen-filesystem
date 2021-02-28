@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Pollen\Filesystem;
 
 use Pollen\Http\BinaryFileResponseInterface;
-use Pollen\Http\RequestInterface;
 use Pollen\Http\StreamedResponseInterface;
+use Pollen\Support\Proxy\HttpRequestProxyInterface;
 
-interface FilesystemHttpAwareTraitInterface
+interface FilesystemHttpAwareTraitInterface extends HttpRequestProxyInterface
 {
     /**
      * Génération de la réponse HTTP d'un fichier statique.
@@ -45,13 +45,6 @@ interface FilesystemHttpAwareTraitInterface
     ): StreamedResponseInterface;
 
     /**
-     * Récupération de l'instance de la  requête HTTP associée.
-     *
-     * @return RequestInterface
-     */
-    public function getRequest(): RequestInterface;
-
-    /**
      * Récupération de l'url d'une ressource.
      *
      * @param string $path
@@ -85,13 +78,4 @@ interface FilesystemHttpAwareTraitInterface
      * @return FilesystemHttpAwareTrait
      */
     public function setBaseUrl(string $baseUrl): FilesystemHttpAwareTrait;
-
-    /**
-     * Définition de l'instance de la requête HTTP associée.
-     *
-     * @param RequestInterface $request
-     *
-     * @return FilesystemHttpAwareTrait
-     */
-    public function setRequest(RequestInterface $request): FilesystemHttpAwareTrait;
 }
