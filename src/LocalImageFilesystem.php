@@ -7,7 +7,7 @@ namespace Pollen\Filesystem;
 use Exception;
 use League\Flysystem\FilesystemException;
 use League\MimeTypeDetection\ExtensionMimeTypeDetector;
-use Pollen\Support\HtmlAttrs;
+use Pollen\Support\Html;
 use RuntimeException;
 
 class LocalImageFilesystem extends LocalFilesystem implements LocalImageFilesystemInterface
@@ -43,7 +43,7 @@ class LocalImageFilesystem extends LocalFilesystem implements LocalImageFilesyst
             }
 
             if (preg_match('/^svg\+?/', $mimes[1])) {
-                return $attrs === null ? $content : "<div " . HtmlAttrs::createFromAttrs($attrs) . ">{$content}</div>";
+                return $attrs === null ? $content : "<div " . Html::attr($attrs) . ">{$content}</div>";
             }
 
             $attrs = $attrs ?? [];
@@ -57,7 +57,7 @@ class LocalImageFilesystem extends LocalFilesystem implements LocalImageFilesyst
                 $attrs['alt'] = basename($filename, '.' . pathinfo($filename, PATHINFO_EXTENSION));
             }
 
-            return "<img " . HtmlAttrs::createFromAttrs($attrs) . "/>";
+            return "<img " . Html::attr($attrs) . "/>";
         } catch (FilesystemException $e) {
             throw new RuntimeException(
                 sprintf('HTML Render method call provides an exception : %s', $e->getMessage())
