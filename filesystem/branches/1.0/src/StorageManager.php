@@ -18,6 +18,12 @@ class StorageManager implements StorageManagerInterface
     use ContainerProxy;
 
     /**
+     * Instance principale.
+     * @var static|null
+     */
+    private static $instance;
+
+    /**
      * @var FilesystemInterface[]|array
      */
     private $disks = [];
@@ -40,6 +46,19 @@ class StorageManager implements StorageManagerInterface
         if ($container !== null) {
             $this->setContainer($container);
         }
+    }
+
+    /**
+     * Récupération de l'instance principale.
+     *
+     * @return static
+     */
+    public static function getInstance(): StorageManagerInterface
+    {
+        if (self::$instance instanceof self) {
+            return self::$instance;
+        }
+        throw new RuntimeException(sprintf('Unavailable [%s] instance', __CLASS__));
     }
 
     /**
