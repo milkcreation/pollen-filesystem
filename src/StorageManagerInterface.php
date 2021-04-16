@@ -20,7 +20,7 @@ interface StorageManagerInterface extends ContainerProxyInterface, ConfigBagAwar
     public function addDisk(string $name, FilesystemInterface $disk): StorageManagerInterface;
 
     /**
-     * Ajout d'une instance de système de gestion de fichier local.
+     * Ajout d'une instance de système de gestion de fichiers local.
      *
      * @param string|null $name
      * @param LocalFilesystemInterface $disk
