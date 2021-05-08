@@ -121,6 +121,18 @@ class StorageManager implements StorageManagerInterface
     /**
      * @inheritDoc
      */
+    public function localDisk(?string $name = null): ?LocalFilesystemInterface
+    {
+        if (($disk = $this->disk($name)) && $disk instanceof LocalFilesystemInterface) {
+            return $disk;
+        }
+
+        return null;
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function registerLocalDisk(string $name, string $root, array $config = []): LocalFilesystemInterface
     {
         $adapter = $this->createLocalAdapter($root, $config);

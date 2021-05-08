@@ -12,6 +12,16 @@ use League\MimeTypeDetection\MimeTypeDetector;
 class LocalFilesystemAdapter extends AbstractFilesystemAdapter implements LocalFilesystemAdapterInterface
 {
     /**
+     * @var int
+     */
+    public const SKIP_LINKS = 0001;
+
+    /**
+     * @var int
+     */
+    public const DISALLOW_LINKS = 0002;
+
+    /**
      * @var PathPrefixer
      */
     protected $dedicatedPrefixer;

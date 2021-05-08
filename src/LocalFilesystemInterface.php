@@ -14,4 +14,13 @@ interface LocalFilesystemInterface extends FilesystemInterface, FilesystemHttpAw
      * @return string|null
      */
     public function __invoke(string $path): ?string;
+
+    /**
+     * Récupération du chemin absolu vers une ressource.
+     *
+     * @param string $path
+     *
+     * @return string
+     */
+    public function getAbsolutePath(string $path = '/'): string;
 }

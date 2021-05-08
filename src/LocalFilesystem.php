@@ -29,4 +29,12 @@ class LocalFilesystem extends AbstractFilesystem implements LocalFilesystemInter
             return null;
         }
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function getAbsolutePath(string $path = '/'): string
+    {
+        return $this->adapter->getAbsolutePath($path);
+    }
 }
