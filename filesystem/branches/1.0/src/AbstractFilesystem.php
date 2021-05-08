@@ -65,7 +65,7 @@ abstract class AbstractFilesystem implements FilesystemInterface
         try {
             $listing = $this->listContents($location, $deep);
 
-            $listing = $listing
+            $listing
                 ->map(
                     function (StorageAttributes $attributes) {
                         if ($attributes instanceof FileAttributes) {
@@ -86,6 +86,7 @@ abstract class AbstractFilesystem implements FilesystemInterface
                         return $attributes;
                     }
                 );
+
             return $listing;
         } catch (FilesystemException $e) {
             throw new RuntimeException('LocalFilesystem unable to list contents directory with mime');
