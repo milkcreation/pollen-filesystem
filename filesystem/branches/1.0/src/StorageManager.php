@@ -47,6 +47,10 @@ class StorageManager implements StorageManagerInterface
         if ($container !== null) {
             $this->setContainer($container);
         }
+
+        if (!self::$instance instanceof static) {
+            self::$instance = $this;
+        }
     }
 
     /**
