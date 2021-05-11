@@ -130,7 +130,17 @@ class StorageManager implements StorageManagerInterface
         if (($disk = $this->disk($name)) && $disk instanceof LocalFilesystemInterface) {
             return $disk;
         }
+        return null;
+    }
 
+    /**
+     * @inheritDoc
+     */
+    public function localImageDisk(?string $name = null): ?LocalImageFilesystemInterface
+    {
+        if (($disk = $this->disk($name)) && $disk instanceof LocalImageFilesystemInterface) {
+            return $disk;
+        }
         return null;
     }
 
