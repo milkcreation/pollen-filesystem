@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Pollen\Filesystem;
 
-use Pollen\Container\BaseServiceProvider;
+use Pollen\Container\BootableServiceProvider;
 
-class FilesystemServiceProvider extends BaseServiceProvider
+class FilesystemServiceProvider extends BootableServiceProvider
 {
     /**
      * Liste des services fournis.

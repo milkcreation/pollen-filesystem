@@ -56,13 +56,22 @@ interface StorageManagerInterface extends ContainerProxyInterface, ConfigBagAwar
     public function getDefaultDisk(): ?FilesystemInterface;
 
     /**
-     * Récupération d'une instance de système de fichiers local.
+     * Récupération d'une instance de système de fichiers locaux.
      *
      * @param string|null $name
      *
      * @return LocalFilesystemInterface|null
      */
     public function localDisk(?string $name = null): ?LocalFilesystemInterface;
+
+    /**
+     * Récupération d'une instance de système de fichiers images locaux.
+     *
+     * @param string|null $name
+     *
+     * @return LocalImageFilesystemInterface|null
+     */
+    public function localImageDisk(?string $name = null): ?LocalImageFilesystemInterface;
 
     /**
      * Déclaration d'un système de fichiers local.
