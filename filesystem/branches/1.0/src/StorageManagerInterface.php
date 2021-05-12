@@ -40,6 +40,16 @@ interface StorageManagerInterface extends ContainerProxyInterface, ConfigBagAwar
     public function createLocalAdapter(string $root, array $config = []): LocalFilesystemAdapterInterface;
 
     /**
+     * Création d'une instance de système de fichiers local.
+     *
+     * @param string $root
+     * @param array $config
+     *
+     * @return LocalFilesystemInterface
+     */
+    public function createLocalFilesystem(string $root, array $config = []): LocalFilesystemInterface;
+
+    /**
      * Récupération d'une instance de système de gestion de fichier.
      *
      * @param string|null $name
