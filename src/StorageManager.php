@@ -105,6 +105,16 @@ class StorageManager implements StorageManagerInterface
     /**
      * @inheritDoc
      */
+    public function createLocalFilesystem(string $root, array $config = []): LocalFilesystemInterface
+    {
+        $adapter = $this->createLocalAdapter($root, $config);
+
+        return new LocalFilesystem($adapter);
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function disk(?string $name = null): ?FilesystemInterface
     {
         if ($name === null) {
@@ -149,8 +159,7 @@ class StorageManager implements StorageManagerInterface
      */
     public function registerLocalDisk(string $name, string $root, array $config = []): LocalFilesystemInterface
     {
-        $adapter = $this->createLocalAdapter($root, $config);
-        $disk = new LocalFilesystem($adapter);
+        $disk = $this->createLocalFilesystem($root, $config);
 
         $this->addLocalDisk($name, $disk);
 
