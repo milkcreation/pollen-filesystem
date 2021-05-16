@@ -8,6 +8,7 @@ use League\Flysystem\Local\LocalFilesystemAdapter as BaseLocalFilesystemAdapter;
 use League\Flysystem\PathPrefixer;
 use League\Flysystem\UnixVisibility\VisibilityConverter;
 use League\MimeTypeDetection\MimeTypeDetector;
+use SplFileInfo;
 
 class LocalFilesystemAdapter extends AbstractFilesystemAdapter implements LocalFilesystemAdapterInterface
 {
@@ -57,5 +58,13 @@ class LocalFilesystemAdapter extends AbstractFilesystemAdapter implements LocalF
     public function getAbsolutePath(string $path = '/'): string
     {
         return $this->dedicatedPrefixer->prefixPath($path);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getSplFileInfo(string $path = '/'): SplFileInfo
+    {
+        return new SplFileInfo($this->getAbsolutePath($path));
     }
 }
