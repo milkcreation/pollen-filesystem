@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Pollen\Filesystem;
 
+use League\Flysystem\DirectoryAttributes;
+use League\Flysystem\FileAttributes;
+use League\Flysystem\StorageAttributes;
 use SplFileInfo;
 
 interface LocalFilesystemInterface extends FilesystemInterface, FilesystemHttpAwareTraitInterface
@@ -34,4 +37,13 @@ interface LocalFilesystemInterface extends FilesystemInterface, FilesystemHttpAw
      * @return SplFileInfo
      */
     public function getSplFileInfo(string $path = '/'): SplFileInfo;
+
+    /**
+     * Récupération des attributs d'une ressource.
+     *
+     * @param string $path
+     *
+     * @return StorageAttributes|DirectoryAttributes|FileAttributes
+     */
+    public function getStorageAttributes(string $path = '/'): StorageAttributes;
 }

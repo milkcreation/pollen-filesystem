@@ -64,7 +64,7 @@ trait FilesystemHttpAwareTrait
                 )
             );
 
-            $response->setExpires((new DateTime())->modify("+ {$expires} seconds"));
+            $response->setExpires((new DateTime())->modify("+ $expires seconds"));
         } catch (FilesystemException $e) {
             throw new RuntimeException(
                 sprintf(
