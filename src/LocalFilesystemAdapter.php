@@ -4,9 +4,15 @@ declare(strict_types=1);
 
 namespace Pollen\Filesystem;
 
+use League\Flysystem\DirectoryAttributes;
+use League\Flysystem\FileAttributes;
 use League\Flysystem\Local\LocalFilesystemAdapter as BaseLocalFilesystemAdapter;
 use League\Flysystem\PathPrefixer;
+use League\Flysystem\StorageAttributes;
+use League\Flysystem\SymbolicLinkEncountered;
+use League\Flysystem\UnixVisibility\PortableVisibilityConverter;
 use League\Flysystem\UnixVisibility\VisibilityConverter;
+use League\MimeTypeDetection\FinfoMimeTypeDetector;
 use League\MimeTypeDetection\MimeTypeDetector;
 use SplFileInfo;
 
@@ -23,9 +29,29 @@ class LocalFilesystemAdapter extends AbstractFilesystemAdapter implements LocalF
     public const DISALLOW_LINKS = 0002;
 
     /**
+     * @var int
+     */
+    protected $delegatedLinkHandling;
+
+    /**
+     * @var MimeTypeDetector
+     */
+    protected $delegatedMimeTypeDetector;
+
+    /**
      * @var PathPrefixer
      */
-    protected $dedicatedPrefixer;
+    protected $delegatedPrefixer;
+
+    /**
+     * @var VisibilityConverter
+     */
+    protected $delegatedVisibility;
+
+    /**
+     * @var int
+     */
+    protected $delegatedWriteFlags;
 
     /**
      * @param string $location
@@ -41,6 +67,12 @@ class LocalFilesystemAdapter extends AbstractFilesystemAdapter implements LocalF
         int $linkHandling = BaseLocalFilesystemAdapter::DISALLOW_LINKS,
         MimeTypeDetector $mimeTypeDetector = null
     ) {
+        $this->delegatedPrefixer = new PathPrefixer($location, DIRECTORY_SEPARATOR);
+        $this->delegatedWriteFlags = $writeFlags;
+        $this->delegatedLinkHandling = $linkHandling;
+        $this->delegatedVisibility = $visibility ?? new PortableVisibilityConverter();
+        $this->delegatedMimeTypeDetector = $mimeTypeDetector ?: new FinfoMimeTypeDetector();
+
         $this->delegateAdapter = new BaseLocalFilesystemAdapter(
             $location,
             $visibility,
@@ -48,8 +80,6 @@ class LocalFilesystemAdapter extends AbstractFilesystemAdapter implements LocalF
             $linkHandling,
             $mimeTypeDetector
         );
-
-        $this->dedicatedPrefixer = new PathPrefixer($location, DIRECTORY_SEPARATOR);
     }
 
     /**
@@ -57,7 +87,7 @@ class LocalFilesystemAdapter extends AbstractFilesystemAdapter implements LocalF
      */
     public function getAbsolutePath(string $path = '/'): string
     {
-        return $this->dedicatedPrefixer->prefixPath($path);
+        return $this->delegatedPrefixer->prefixPath($path);
     }
 
     /**
@@ -66,5 +96,34 @@ class LocalFilesystemAdapter extends AbstractFilesystemAdapter implements LocalF
     public function getSplFileInfo(string $path = '/'): SplFileInfo
     {
         return new SplFileInfo($this->getAbsolutePath($path));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getStorageAttributes(string $path = '/'): StorageAttributes
+    {
+        $fileInfo = $this->getSplFileInfo($path);
+
+        if ($fileInfo->isLink()) {
+            if (!$this->delegatedLinkHandling || !self::SKIP_LINKS) {
+                throw SymbolicLinkEncountered::atLocation($fileInfo->getPathname());
+            }
+        }
+
+        $path = $this->delegatedPrefixer->stripPrefix($fileInfo->getPathname());
+        $lastModified = $fileInfo->getMTime();
+        $isDirectory = $fileInfo->isDir();
+        $permissions = $fileInfo->getPerms();
+        $visibility = $isDirectory
+            ? $this->delegatedVisibility->inverseForDirectory($permissions)
+            : $this->delegatedVisibility->inverseForFile($permissions);
+
+        return $isDirectory ? new DirectoryAttributes($path, $visibility, $lastModified) : new FileAttributes(
+            str_replace('\\', '/', $path),
+            $fileInfo->getSize(),
+            $visibility,
+            $lastModified
+        );
     }
 }

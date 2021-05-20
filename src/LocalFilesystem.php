@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pollen\Filesystem;
 
 use League\Flysystem\FilesystemException;
+use League\Flysystem\StorageAttributes;
 use SplFileInfo;
 
 class LocalFilesystem extends AbstractFilesystem implements LocalFilesystemInterface
@@ -45,5 +46,13 @@ class LocalFilesystem extends AbstractFilesystem implements LocalFilesystemInter
     public function getSplFileInfo(string $path = '/'): SplFileInfo
     {
         return $this->adapter->getSplFileInfo($path);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getStorageAttributes(string $path = '/'): StorageAttributes
+    {
+        return $this->adapter->getStorageAttributes($path);
     }
 }
